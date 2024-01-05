@@ -1,6 +1,6 @@
 [
     {
-        "id": "d7be62fcd159c5b4",
+        "id": "fd7828f787134126",
         "type": "tab",
         "label": "Flow 1",
         "disabled": false,
@@ -8,7 +8,7 @@
         "env": []
     },
     {
-        "id": "f913d0bbf9ed5a96",
+        "id": "c35d9623291ec2e9",
         "type": "tab",
         "label": "Flow 2",
         "disabled": false,
@@ -16,35 +16,61 @@
         "env": []
     },
     {
-        "id": "4b5c4acab1532576",
-        "type": "comment",
-        "z": "d7be62fcd159c5b4",
-        "name": "Testing",
+        "id": "f58de2501c119024",
+        "type": "tab",
+        "label": "Flow 2",
+        "disabled": false,
         "info": "",
-        "x": 410,
-        "y": 180,
-        "wires": []
+        "env": []
     },
     {
-        "id": "36c5adb5d395393d",
-        "type": "debug",
-        "z": "d7be62fcd159c5b4",
-        "name": "debug 1",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 620,
-        "y": 60,
-        "wires": []
+        "id": "cb9eaebf8086aa29",
+        "type": "tab",
+        "label": "Flow 3",
+        "disabled": false,
+        "info": "",
+        "env": []
     },
     {
-        "id": "f5b9fd1f0ae170e9",
+        "id": "82bf2f18d068e76d",
+        "type": "tab",
+        "label": "Flow 4",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "da84dd9e0c2d4c8a",
+        "type": "influxdb",
+        "hostname": "127.0.0.1",
+        "port": "8086",
+        "protocol": "http",
+        "database": "database",
+        "name": "",
+        "usetls": false,
+        "tls": "",
+        "influxdbVersion": "2.0",
+        "url": "http://127.0.0.1:8086",
+        "rejectUnauthorized": true
+    },
+    {
+        "id": "d57c9a1eb1a1dcf2",
+        "type": "influxdb",
+        "hostname": "127.0.0.1",
+        "port": "8086",
+        "protocol": "http",
+        "database": "database",
+        "name": "influxdb_data",
+        "usetls": false,
+        "tls": "",
+        "influxdbVersion": "2.0",
+        "url": "http://172.17.0.1:8086",
+        "rejectUnauthorized": true
+    },
+    {
+        "id": "85d81a38f0d547ec",
         "type": "inject",
-        "z": "d7be62fcd159c5b4",
+        "z": "fd7828f787134126",
         "name": "",
         "props": [
             {
@@ -62,22 +88,1603 @@
         "topic": "",
         "payload": "",
         "payloadType": "date",
-        "x": 380,
-        "y": 60,
+        "x": 140,
+        "y": 40,
         "wires": [
             [
-                "36c5adb5d395393d"
+                "92abb9c3240c393b"
             ]
         ]
     },
     {
-        "id": "bc5e43625766d038",
+        "id": "92abb9c3240c393b",
+        "type": "file in",
+        "z": "fd7828f787134126",
+        "name": "",
+        "filename": "/data/All IBD Machine July.xlsx",
+        "filenameType": "str",
+        "format": "",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 190,
+        "y": 100,
+        "wires": [
+            [
+                "0df27e21413b4a22"
+            ]
+        ]
+    },
+    {
+        "id": "e42788fa4d1857fb",
+        "type": "function",
+        "z": "fd7828f787134126",
+        "name": "restruc",
+        "func": "var sheetName = msg.selectedSheetName.split(\" \");\nvar machineName = sheetName[0] + \" \" + sheetName[1];\nlet totalRow = 0;\nlet processedData = []; // Create an array to store processed data\n\n// Define a mapping of machine names to corresponding tag values\nvar machineTagMapping = {\n    \"IBD #3\": \"IBD #3\",\n    \"IBD #5\": \"IBD #5\",\n    \"IBD #6\": \"IBD #6\",\n    \"IBD #7\": \"IBD #7\"\n};\n\n// Determine the tag value based on the machineName\nvar selectedTagValue = machineTagMapping[machineName] || \"DefaultTag\"; // Default tag value if not found\n\nfor (let i = 2; i < msg.payload.length; i++) { // Start from index 2 (third row)\n    var plateID = msg.payload[i][2]; // extract from msg.payload, these properties contain data\n    var endDate = msg.payload[i][19];\n    var procCD = msg.payload[i][18];\n    var grade = msg.payload[i][25];\n    var cross = msg.payload[i][26];\n    var h = msg.payload[i][27];\n    var v = msg.payload[i][28];\n    var customer = msg.payload[i][29];\n    var reviewDate = msg.payload[i][30];\n\n    // Check if any of the variables have a value\n    if (\n        plateID !== undefined ||\n        endDate !== undefined ||\n        procCD !== undefined ||\n        grade !== undefined ||\n        cross !== undefined ||\n        h !== undefined ||\n        v !== undefined ||\n        customer !== undefined ||\n        reviewDate !== undefined\n    ) {\n        // At least one variable has a value, so add the data to the array\n        var data = {\n            'Plate_ID': plateID,\n            'End_Date': endDate,\n            'Proc_CD': procCD,\n            'Grade': grade,\n            'Cross': cross,\n            'H': h,\n            'V': v,\n            'Customer': customer,\n            'ReviewDate': reviewDate,\n            'Machine_Name': machineName,\n            'Machine_Tag': selectedTagValue // Assign the determined tag value\n        };\n\n        if (data.End_Date !== undefined && typeof data.End_Date == 'number') {\n            var parsedEndDate = new Date(parseExcelDate(data.End_Date)).toISOString(); //convert it to readable format\n            data.End_Date = parsedEndDate.slice(0, 10) + \" \" + parsedEndDate.slice(11, 19);\n        }\n\n        if (data.ReviewDate !== undefined && typeof data.ReviewDate == 'number') {\n            var parsedReviewDate = new Date(parseExcelDate(data.ReviewDate)).toISOString();\n            data.ReviewDate = parsedReviewDate.slice(0, 10);\n        }\n\n        processedData.push(data); // Add the processed data to the array\n        totalRow++; // Increment the total row count by 1 for each row processed\n    }\n}\n\nmsg.payload = processedData; // Store the processed data in msg.payload\nmsg.totalRows = totalRow; // Store the total row count in msg.totalRows\n\nreturn msg;\n\nfunction parseExcelDate(excelSerialNumber) {\n    var excelEpoch = new Date('1899-12-30');\n    var parsed = excelEpoch.getTime() + (excelSerialNumber * 24 * 60 * 60 * 1000);\n    return parsed;\n}\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1270,
+        "y": 680,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "81458ae1bd2630d0",
+        "type": "split",
+        "z": "fd7828f787134126",
+        "name": "",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "",
+        "x": 670,
+        "y": 220,
+        "wires": [
+            [
+                "330c7faedd7588d5",
+                "9298f5bf6db5c729"
+            ]
+        ]
+    },
+    {
+        "id": "faff756af3084256",
+        "type": "switch",
+        "z": "fd7828f787134126",
+        "name": "",
+        "property": "payload[2]",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "regex",
+                "v": "^EP\\d+$",
+                "vt": "str",
+                "case": false
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 1270,
+        "y": 720,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "0fe8032a43c91d13",
         "type": "comment",
-        "z": "f913d0bbf9ed5a96",
-        "name": "test",
+        "z": "fd7828f787134126",
+        "name": " -read file node to read the file by absolute path \\n -book node to convert the content to a workbook object \\n -use spreadsheet node to choose specific sheet \\n -convert sheet object to JSON object \\n -split the object in sequence \\n -use switch node to arrange the output \\n -function to restructure the data \\n -influxdb",
         "info": "",
-        "x": 390,
-        "y": 120,
+        "x": 200,
+        "y": 360,
         "wires": []
+    },
+    {
+        "id": "b310ee3151fe7ae3",
+        "type": "function",
+        "z": "fd7828f787134126",
+        "name": "count rows",
+        "func": "var totalNumberRows = msg.totalRows; // Access the total row count from msg\nvar selectedSheetName = msg.selectedSheetName;\nvar injectionTime = msg.injectionTime;\nvar data = msg.payload; // Assuming msg.payload contains the filtered data\n\n// Calculate the total rows for the current sheet name\nvar totalRows = data.length;\n\n// Create a label that combines the sheet name and total rows count\nvar label = `${selectedSheetName} = ${totalRows} rows`;\n\n// Create an array of column names to check for \"NG\" values\nvar columnsToCheck = [\"Plate_ID\", \"End_Date\", \"Proc_CD\", \"Grade\", \"Cross\", \"H\", \"V\", \"Customer\", \"ReviewDate\"];\n\n// Initialize a counter for rows with \"NG\" values\nvar ngRowCount = 0;\n\n// Iterate through the data array\nfor (var i = 0; i < data.length; i++) {\n    var row = data[i];\n\n    // Iterate through the columns to check\n    for (var j = 0; j < columnsToCheck.length; j++) {\n        var columnName = columnsToCheck[j];\n\n        // Check if the column contains \"NG\"\n        if (row[columnName] === \"NG\") {\n            ngRowCount++;\n            break; // If \"NG\" is found in one column, no need to check other columns for this row\n        }\n    }\n}\n\n// Create a result object that combines both sets of data\nvar result = {\n    label: label, \n    selectedSheetName: selectedSheetName,\n    injectionTime: injectionTime,\n    totalNumberRows: totalNumberRows,\n    data: data,\n    totalNGRows: ngRowCount,\n};\n\nmsg.payload = result;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 870,
+        "y": 180,
+        "wires": [
+            [
+                "e510a0488d3ecf0f",
+                "d0537e6bd31b1284"
+            ]
+        ]
+    },
+    {
+        "id": "af380a850b7440f9",
+        "type": "function",
+        "z": "fd7828f787134126",
+        "name": "read each sheet",
+        "func": "// Array holding the names of the sheets to read\nlet sheets = ['IBD #3 Summary ', 'IBD #4 Summary ', 'IBD #5 Summary ', 'IBD #6 Summary ', 'IBD #7 Summary '];\n// The index of the current sheet to read\nlet currentIndex = context.get('currentIndex') || 0;\n\n// Check if all sheets have been read\nif (currentIndex >= sheets.length) {\n    // Reset the index for the next run\n    context.set('currentIndex', 0);\n    // Send a message to indicate completion\n    return { payload: \"All sheets read\" };\n} else {\n    // Set the sheet name in the payload\n    msg.sheet = sheets[currentIndex];\n    // Increment the current index\n    context.set('currentIndex', currentIndex + 1);\n    // Return the message to trigger the next sheet node\n    return [[msg, null, null, null, null],  // For Sheet 3\n    [null, msg, null, null, null],  // For Sheet 4\n    [null, null, msg, null, null],  // For Sheet 5\n    [null, null, null, msg, null],  // For Sheet 6\n    [null, null, null, null, msg]]; // For Sheet 7\n \n}\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1300,
+        "y": 360,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "330c7faedd7588d5",
+        "type": "debug",
+        "z": "fd7828f787134126",
+        "name": "debug 2",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1040,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "f0f0da3b84b80524",
+        "type": "function",
+        "z": "fd7828f787134126",
+        "name": "restruc (final)",
+        "func": "var sheetName = msg.selectedSheetName.split(\" \");\nvar machineName = sheetName[0] + \" \" + sheetName[1];\nlet totalRow = 0;\nlet processedData = []; // Create an array to store processed data\n\nmsg.injectionTime = new Date().toISOString();\n\nfor (let i = 2; i < msg.payload.length; i++) { // Start from index 2 (third row)\n    var plateID = msg.payload[i][2]; // extract from msg.payload, these properties contain data\n    var endDate = msg.payload[i][19];\n    var procCD = msg.payload[i][18];\n    var grade = msg.payload[i][25];\n    var cross = msg.payload[i][26];\n    var h = msg.payload[i][27];\n    var v = msg.payload[i][28];\n    var customer = msg.payload[i][29];\n    var reviewDate = msg.payload[i][30];\n\n    // Check if any of the variables have a value\n    if (\n        plateID !== undefined ||\n        endDate !== undefined ||\n        procCD !== undefined ||\n        grade !== undefined ||\n        cross !== undefined ||\n        h !== undefined ||\n        v !== undefined ||\n        customer !== undefined ||\n        reviewDate !== undefined\n    ) {\n        // At least one variable has a value, so add the data to the array\n        var data = {\n            'Plate_ID': plateID,\n            'End_Date': endDate,\n            'Proc_CD': procCD,\n            'Grade': grade,\n            'Cross': cross,\n            'H': h,\n            'V': v,\n            'Customer': customer,\n            'ReviewDate': reviewDate,\n            'Machine_Name': machineName\n        };\n\n        if (data.End_Date !== undefined && typeof data.End_Date == 'number') {\n            var parsedEndDate = new Date(parseExcelDate(data.End_Date)).toISOString(); //convert it to readable format\n            data.End_Date = parsedEndDate.slice(0, 10) + \" \" + parsedEndDate.slice(11, 19);\n        }\n\n        if (data.ReviewDate !== undefined && typeof data.ReviewDate == 'number') {\n            var parsedReviewDate = new Date(parseExcelDate(data.ReviewDate)).toISOString();\n            data.ReviewDate = parsedReviewDate.slice(0, 10);\n        }\n\n        processedData.push(data); // Add the processed data to the array\n        totalRow++; // Increment the total row count by 1 for each row processed\n    }\n}\n\nfunction parseExcelDate(excelSerialNumber) {\n    var excelEpoch = new Date('1899-12-30');\n    var parsed = excelEpoch.getTime() + (excelSerialNumber * 24 * 60 * 60 * 1000);\n    return parsed;\n}\n\nmsg.payload = processedData; // Store the processed data in msg.payload\nmsg.totalRows = totalRow; // Store the total row count in msg.totalRows\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 690,
+        "y": 180,
+        "wires": [
+            [
+                "b310ee3151fe7ae3",
+                "81458ae1bd2630d0"
+            ]
+        ]
+    },
+    {
+        "id": "c28c8ed000535d0b",
+        "type": "switch",
+        "z": "fd7828f787134126",
+        "name": "",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "cont",
+                "v": "July batch",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 1270,
+        "y": 640,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e510a0488d3ecf0f",
+        "type": "debug",
+        "z": "fd7828f787134126",
+        "name": "debug 5",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1040,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "a4787f876ac90b6e",
+        "type": "function",
+        "z": "fd7828f787134126",
+        "name": "test row",
+        "func": "var totalNumberRows = msg.totalRows; // Access the total row count from msg\nvar selectedSheetName = msg.selectedSheetName;\nvar injectionTime = msg.injectionTime;\nvar data = msg.payload; // Assuming msg.payload contains the filtered data\n\n// Calculate the total rows for the current sheet name\nvar totalRows = data.length;\n\n// Create a label that combines the sheet name and total rows count\nvar label = `${selectedSheetName} = ${totalRows} rows`;\n\n// Create a new object with the label and data\nvar newData = {\n    label: label, // E.g., \"IBD #3 Summary = 464 rows\"\n    selectedSheetName: selectedSheetName,\n    injectionTime: injectionTime,\n    totalNumberRows: totalNumberRows,\n    data: data\n};\n\nmsg.payload = newData; // Update the payload with the modified data\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1280,
+        "y": 400,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "4239150f264900dd",
+        "type": "function",
+        "z": "fd7828f787134126",
+        "name": "total rows",
+        "func": "var totalNumberRows = msg.totalRows; // Access the total row count from msg\nvar selectedSheetName = msg.selectedSheetName;\nvar injectionTime = msg.injectionTime;\nvar data =msg.payload; // Assuming msg.payload contains the filtered data\n\nvar filteredData = data.filter(function (row) {\n    return row.Machine_Name === selectedSheetName;\n});\n\nvar totalRows = filteredData.length;\n\nvar result = {\n    selectedSheetName: selectedSheetName,\n    injectionTime: injectionTime,\n    totalNumberRows: totalNumberRows, // Include the totalRows from the first node\n    data: filteredData, // Include the filtered data for this sheet\n};\n\nreturn { payload: result };",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1280,
+        "y": 480,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "58b6da58b45aee91",
+        "type": "function",
+        "z": "fd7828f787134126",
+        "name": "NG rows",
+        "func": "var data = msg.payload; // msg.payload contains data array\n\n// Define an array of column names that want to check for \"NG\" values\nvar columnsToCheck = [\"Plate_ID\", \"End_Date\", \"Proc_CD\", \"Grade\", \"Cross\", \"H\", \"V\", \"Customer\", \"ReviewDate\"];\n\n// Initialize a counter for rows with \"NG\" values\nvar ngRowCount = 0;\n\n// Iterate through the data array\nfor (var i = 0; i < data.length; i++) {\n    var row = data[i];\n\n    // Iterate through the columns to check\n    for (var j = 0; j < columnsToCheck.length; j++) {\n        var columnName = columnsToCheck[j];\n\n        // Check if the column contains \"NG\" \n        if (row[columnName] === \"NG\") {\n            ngRowCount++;\n            break; // If \"NG\" is found in one column, no need to check other columns for this row\n        }\n    }\n}\n\n// Create a result object\nvar result = {\n    totalNGRows: ngRowCount,\n    \n};\n\nmsg.payload = result;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1280,
+        "y": 440,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c72b5f9bf610602b",
+        "type": "switch",
+        "z": "fd7828f787134126",
+        "name": "",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "payload",
+                "vt": "msg"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 1270,
+        "y": 520,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "fab9265e48a76e2b",
+        "type": "function",
+        "z": "fd7828f787134126",
+        "name": "test",
+        "func": "\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1270,
+        "y": 600,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "43db593e4b8cb96a",
+        "type": "influxdb out",
+        "z": "fd7828f787134126",
+        "influxdb": "da84dd9e0c2d4c8a",
+        "name": "",
+        "measurement": "data",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "macrovention",
+        "bucket": "excel",
+        "x": 1350,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "d0537e6bd31b1284",
+        "type": "influxdb out",
+        "z": "fd7828f787134126",
+        "influxdb": "d57c9a1eb1a1dcf2",
+        "name": "IBD rows",
+        "measurement": "rows",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "macrovention",
+        "bucket": "IBD",
+        "x": 1040,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "9298f5bf6db5c729",
+        "type": "influxdb out",
+        "z": "fd7828f787134126",
+        "influxdb": "d57c9a1eb1a1dcf2",
+        "name": "IBD spilt",
+        "measurement": "split",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "macrovention",
+        "bucket": "IBD",
+        "x": 1040,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "0df27e21413b4a22",
+        "type": "book",
+        "z": "fd7828f787134126",
+        "name": "",
+        "raw": false,
+        "x": 390,
+        "y": 100,
+        "wires": [
+            [
+                "0af98a78a7de2605",
+                "6e31a414ceecf961",
+                "592bcfe2a8a67e4d",
+                "011131c2bc89eed0",
+                "230feae6b619d299"
+            ]
+        ]
+    },
+    {
+        "id": "0af98a78a7de2605",
+        "type": "sheet",
+        "z": "fd7828f787134126",
+        "name": "#3",
+        "sheetName": "IBD #3 Summary ",
+        "x": 510,
+        "y": 40,
+        "wires": [
+            [
+                "5d8c14e76580c787"
+            ]
+        ]
+    },
+    {
+        "id": "011131c2bc89eed0",
+        "type": "sheet",
+        "z": "fd7828f787134126",
+        "name": "#6",
+        "sheetName": "IBD #6 Summary ",
+        "x": 510,
+        "y": 160,
+        "wires": [
+            [
+                "5d8c14e76580c787"
+            ]
+        ]
+    },
+    {
+        "id": "592bcfe2a8a67e4d",
+        "type": "sheet",
+        "z": "fd7828f787134126",
+        "name": "#5",
+        "sheetName": "IBD #5 Summary ",
+        "x": 510,
+        "y": 120,
+        "wires": [
+            [
+                "5d8c14e76580c787"
+            ]
+        ]
+    },
+    {
+        "id": "230feae6b619d299",
+        "type": "sheet",
+        "z": "fd7828f787134126",
+        "name": "#7",
+        "sheetName": "IBD #7 Summary ",
+        "x": 510,
+        "y": 200,
+        "wires": [
+            [
+                "5d8c14e76580c787"
+            ]
+        ]
+    },
+    {
+        "id": "6e31a414ceecf961",
+        "type": "sheet",
+        "z": "fd7828f787134126",
+        "name": "#4",
+        "sheetName": "IBD #4 Summary ",
+        "x": 510,
+        "y": 80,
+        "wires": [
+            [
+                "5d8c14e76580c787"
+            ]
+        ]
+    },
+    {
+        "id": "5d8c14e76580c787",
+        "type": "sheet-to-json",
+        "z": "fd7828f787134126",
+        "name": "",
+        "raw": "true",
+        "range": "",
+        "header": "1",
+        "blankrows": false,
+        "x": 690,
+        "y": 140,
+        "wires": [
+            [
+                "f0f0da3b84b80524"
+            ]
+        ]
+    },
+    {
+        "id": "fe1c34070bf72f6e",
+        "type": "inject",
+        "z": "c35d9623291ec2e9",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 160,
+        "y": 120,
+        "wires": [
+            [
+                "156df1dc59f50996"
+            ]
+        ]
+    },
+    {
+        "id": "156df1dc59f50996",
+        "type": "file in",
+        "z": "c35d9623291ec2e9",
+        "name": "",
+        "filename": "/data/All IBD Machine July.xlsx",
+        "filenameType": "str",
+        "format": "",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 210,
+        "y": 180,
+        "wires": [
+            [
+                "a32bccbe46f09547"
+            ]
+        ]
+    },
+    {
+        "id": "7a70350cfb2fd1fd",
+        "type": "debug",
+        "z": "c35d9623291ec2e9",
+        "name": "debug 3",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1140,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "3c51939505407e92",
+        "type": "function",
+        "z": "c35d9623291ec2e9",
+        "name": "restruc",
+        "func": "var sheetName = msg.selectedSheetName.split(\" \");\nvar machineName = sheetName[0] + \" \" + sheetName[1];\n\nvar plateID = msg.payload[2]; //extract from msg.payload, these properties contain data\nvar endDate = msg.payload[19];\nvar procCD = msg.payload[18];\nvar grade = msg.payload[25];\nvar cross = msg.payload[26];\nvar h = msg.payload[27];\nvar v = msg.payload[28];\nvar customer = msg.payload[29];\nvar reviewDate = msg.payload[30];\n\nvar data = { \n    'Plate_ID': plateID,\n    'End_Date': endDate,\n    'Proc_CD': procCD,\n    'Grade': grade,\n    'Cross': cross,\n    'H': h,\n    'V': v,\n    'Customer': customer,\n    'ReviewDate': reviewDate,\n    'Machine_Name': machineName\n};\n\nif (data.End_Date !== undefined && typeof data.End_Date == 'number') {\n    var parsedEndDate = new Date(parseExcelDate(data.End_Date)).toISOString(); //convert it to readable format\n    data.End_Date = parsedEndDate.slice(0, 10) + \" \" + parsedEndDate.slice(11, 19);\n}\n\nif (data.ReviewDate !== undefined && typeof data.ReviewDate == 'number') {\n    var parsedReviewDate = new Date(parseExcelDate(data.ReviewDate)).toISOString();\n    data.ReviewDate = parsedReviewDate.slice(0, 10);\n}\n\nmsg.payload = data;\n\nreturn msg;\n\nfunction parseExcelDate(excelSerialNumber) {\n    var excelEpoch = new Date('1899-12-30');\n    var parsed = excelEpoch.getTime() + (excelSerialNumber * 24 * 60 * 60 * 1000);\n    return parsed;\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 730,
+        "y": 280,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "97540ceb7379d63a",
+        "type": "split",
+        "z": "c35d9623291ec2e9",
+        "name": "",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "",
+        "x": 870,
+        "y": 220,
+        "wires": [
+            [
+                "45c2260f2e74330d"
+            ]
+        ]
+    },
+    {
+        "id": "045c728068d042aa",
+        "type": "switch",
+        "z": "c35d9623291ec2e9",
+        "name": "",
+        "property": "payload[2]",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "regex",
+                "v": "^EP\\d+$",
+                "vt": "str",
+                "case": false
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 730,
+        "y": 240,
+        "wires": [
+            [
+                "3c51939505407e92"
+            ]
+        ]
+    },
+    {
+        "id": "a6a23e303e7c2ab9",
+        "type": "function",
+        "z": "c35d9623291ec2e9",
+        "name": "read each sheet",
+        "func": "// Array holding the names of the sheets to read\nlet sheets = ['IBD #3 Summary '];\n// The index of the current sheet to read\nlet currentIndex = context.get('currentIndex') || 0;\n\n// Check if all sheets have been read\nif (currentIndex >= sheets.length) {\n    // Reset the index for the next run\n    context.set('currentIndex', 0);\n    // Send a message to indicate completion\n    return { payload: \"All sheets read\" };\n} else {\n    // Set the sheet name in the payload\n    msg.sheet = sheets[currentIndex];\n    // Increment the current index\n    context.set('currentIndex', currentIndex + 1);\n    // Return the message to trigger the next sheet node\n    return [[msg, null, null, null, null],  // For Sheet1\n    [null, msg, null, null, null],  // For Sheet2\n    [null, null, msg, null, null],  // For Sheet3\n    [null, null, null, msg, null],  // For Sheet4\n    [null, null, null, null, msg]]; // For Sheet5\n}\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 760,
+        "y": 120,
+        "wires": [
+            [
+                "53cc76ee5ac361fe"
+            ]
+        ]
+    },
+    {
+        "id": "45c2260f2e74330d",
+        "type": "switch",
+        "z": "c35d9623291ec2e9",
+        "name": "",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "cont",
+                "v": "July batch",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 990,
+        "y": 300,
+        "wires": [
+            [
+                "7a70350cfb2fd1fd"
+            ]
+        ]
+    },
+    {
+        "id": "7bcde10874bcfb41",
+        "type": "debug",
+        "z": "c35d9623291ec2e9",
+        "name": "debug 4",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1035,
+        "y": 192,
+        "wires": []
+    },
+    {
+        "id": "a32bccbe46f09547",
+        "type": "book",
+        "z": "c35d9623291ec2e9",
+        "name": "",
+        "raw": false,
+        "x": 410,
+        "y": 180,
+        "wires": [
+            [
+                "ae7d37fa438eb225"
+            ]
+        ]
+    },
+    {
+        "id": "ae7d37fa438eb225",
+        "type": "sheet",
+        "z": "c35d9623291ec2e9",
+        "name": "",
+        "sheetName": "IBD #3 Summary ",
+        "x": 530,
+        "y": 100,
+        "wires": [
+            [
+                "a6a23e303e7c2ab9"
+            ]
+        ]
+    },
+    {
+        "id": "bbf9081f8f0ff390",
+        "type": "sheet",
+        "z": "c35d9623291ec2e9",
+        "name": "",
+        "sheetName": "IBD #6 Summary ",
+        "x": 530,
+        "y": 220,
+        "wires": [
+            [
+                "a6a23e303e7c2ab9"
+            ]
+        ]
+    },
+    {
+        "id": "10b02709c76fa58c",
+        "type": "sheet",
+        "z": "c35d9623291ec2e9",
+        "name": "",
+        "sheetName": "IBD #4 Summary ",
+        "x": 530,
+        "y": 140,
+        "wires": [
+            [
+                "a6a23e303e7c2ab9"
+            ]
+        ]
+    },
+    {
+        "id": "ca7fdf6c63a4a025",
+        "type": "sheet",
+        "z": "c35d9623291ec2e9",
+        "name": "",
+        "sheetName": "IBD #5 Summary ",
+        "x": 530,
+        "y": 180,
+        "wires": [
+            [
+                "a6a23e303e7c2ab9"
+            ]
+        ]
+    },
+    {
+        "id": "1c25359fb7541689",
+        "type": "sheet",
+        "z": "c35d9623291ec2e9",
+        "name": "",
+        "sheetName": "IBD #7 Summary ",
+        "x": 530,
+        "y": 260,
+        "wires": [
+            [
+                "a6a23e303e7c2ab9"
+            ]
+        ]
+    },
+    {
+        "id": "53cc76ee5ac361fe",
+        "type": "sheet-to-json",
+        "z": "c35d9623291ec2e9",
+        "name": "",
+        "raw": "true",
+        "range": "",
+        "header": "1",
+        "blankrows": false,
+        "x": 750,
+        "y": 160,
+        "wires": [
+            [
+                "97540ceb7379d63a",
+                "7bcde10874bcfb41"
+            ]
+        ]
+    },
+    {
+        "id": "598e5828b215a413",
+        "type": "inject",
+        "z": "f58de2501c119024",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 80,
+        "y": 420,
+        "wires": [
+            [
+                "2096499d70b25731"
+            ]
+        ]
+    },
+    {
+        "id": "2096499d70b25731",
+        "type": "file in",
+        "z": "f58de2501c119024",
+        "name": "",
+        "filename": "/data/All IBD Machine July.xlsx",
+        "filenameType": "str",
+        "format": "",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 310,
+        "y": 400,
+        "wires": [
+            [
+                "793b924ea68b1eda"
+            ]
+        ]
+    },
+    {
+        "id": "1e7bcc7def5ecba5",
+        "type": "split",
+        "z": "f58de2501c119024",
+        "name": "",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "",
+        "x": 790,
+        "y": 280,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "0bb7f26ce7188e9a",
+        "type": "function",
+        "z": "f58de2501c119024",
+        "name": "count rows",
+        "func": "var totalNumberRows = msg.totalRows; // Access the total row count from msg\nvar selectedSheetName = msg.selectedSheetName;\nvar injectionTime = msg.injectionTime;\nvar data = msg.payload; // Assuming msg.payload contains the filtered data\n\n// Calculate the total rows for the current sheet name\nvar totalRows = data.length;\n\n// Create a label that combines the sheet name and total rows count\nvar label = `${selectedSheetName} = ${totalRows} rows`;\n\n// Create an array of column names to check for \"NG\" values\nvar columnsToCheck = [\"Plate_ID\", \"End_Date\", \"Proc_CD\", \"Grade\", \"Cross\", \"H\", \"V\", \"Customer\", \"ReviewDate\"];\n\n// Initialize a counter for rows with \"NG\" values\nvar ngRowCount = 0;\n\n// Iterate through the data array\nfor (var i = 0; i < data.length; i++) {\n    var row = data[i];\n\n    // Iterate through the columns to check\n    for (var j = 0; j < columnsToCheck.length; j++) {\n        var columnName = columnsToCheck[j];\n\n        // Check if the column contains \"NG\"\n        if (row[columnName] === \"NG\") {\n            ngRowCount++;\n            break; // If \"NG\" is found in one column, no need to check other columns for this row\n        }\n    }\n}\n\n// Create a result object that combines both sets of data\nvar result = {\n    label: label, \n    selectedSheetName: selectedSheetName,\n    injectionTime: injectionTime,\n    totalNumberRows: totalNumberRows,\n    data: data,\n    totalNGRows: ngRowCount,\n};\n\nmsg.payload = result;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 990,
+        "y": 220,
+        "wires": [
+            [
+                "9dc7e5c1e8f8fb16"
+            ]
+        ]
+    },
+    {
+        "id": "5e1dbcd97d0bee8a",
+        "type": "debug",
+        "z": "f58de2501c119024",
+        "name": "debug 6",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1060,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "439e2d68ef3a28fb",
+        "type": "function",
+        "z": "f58de2501c119024",
+        "name": "restruc (final)",
+        "func": "var sheetName = msg.selectedSheetName.split(\" \");\nvar machineName = sheetName[0] + \" \" + sheetName[1];\nlet totalRow = 0;\nlet processedData = []; // Create an array to store processed data\n\nmsg.injectionTime = new Date().toISOString();\n\nfor (let i = 2; i < msg.payload.length; i++) { // Start from index 2 (third row)\n    var plateID = msg.payload[i][2]; // extract from msg.payload, these properties contain data\n    var endDate = msg.payload[i][19];\n    var procCD = msg.payload[i][18];\n    var grade = msg.payload[i][25];\n    var cross = msg.payload[i][26];\n    var h = msg.payload[i][27];\n    var v = msg.payload[i][28];\n    var customer = msg.payload[i][29];\n    var reviewDate = msg.payload[i][30];\n\n    // Check if any of the variables have a value\n    if (\n        plateID !== undefined ||\n        endDate !== undefined ||\n        procCD !== undefined ||\n        grade !== undefined ||\n        cross !== undefined ||\n        h !== undefined ||\n        v !== undefined ||\n        customer !== undefined ||\n        reviewDate !== undefined\n    ) {\n        // At least one variable has a value, so add the data to the array\n        var data = {\n            'Plate_ID': plateID,\n            'End_Date': endDate,\n            'Proc_CD': procCD,\n            'Grade': grade,\n            'Cross': cross,\n            'H': h,\n            'V': v,\n            'Customer': customer,\n            'ReviewDate': reviewDate,\n            'Machine_Name': machineName\n        };\n\n        if (data.End_Date !== undefined && typeof data.End_Date == 'number') {\n            var parsedEndDate = new Date(parseExcelDate(data.End_Date)).toISOString(); //convert it to readable format\n            data.End_Date = parsedEndDate.slice(0, 10) + \" \" + parsedEndDate.slice(11, 19);\n        }\n\n        if (data.ReviewDate !== undefined && typeof data.ReviewDate == 'number') {\n            var parsedReviewDate = new Date(parseExcelDate(data.ReviewDate)).toISOString();\n            data.ReviewDate = parsedReviewDate.slice(0, 10);\n        }\n\n        processedData.push(data); // Add the processed data to the array\n        totalRow++; // Increment the total row count by 1 for each row processed\n    }\n}\n\nfunction parseExcelDate(excelSerialNumber) {\n    var excelEpoch = new Date('1899-12-30');\n    var parsed = excelEpoch.getTime() + (excelSerialNumber * 24 * 60 * 60 * 1000);\n    return parsed;\n}\n\nmsg.payload = processedData; // Store the processed data in msg.payload\nmsg.totalRows = totalRow; // Store the total row count in msg.totalRows\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 810,
+        "y": 240,
+        "wires": [
+            [
+                "0bb7f26ce7188e9a",
+                "1e7bcc7def5ecba5"
+            ]
+        ]
+    },
+    {
+        "id": "9dc7e5c1e8f8fb16",
+        "type": "debug",
+        "z": "f58de2501c119024",
+        "name": "debug 7",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1140,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "491140dd0d5a0a7c",
+        "type": "file",
+        "z": "f58de2501c119024",
+        "name": "msg.filename",
+        "filename": "filename",
+        "filenameType": "msg",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "false",
+        "encoding": "none",
+        "x": 650,
+        "y": 420,
+        "wires": [
+            [
+                "915b9b1e4c603c64"
+            ]
+        ]
+    },
+    {
+        "id": "793b924ea68b1eda",
+        "type": "function",
+        "z": "f58de2501c119024",
+        "name": "function 1",
+        "func": "let filenames = [\"IBD1.xlsx\", \"IBD2.xlsx\", \"IBD3.xlsx\"]; // Your desired file names\nlet messages = filenames.map((filename) => {\n    return { filename: filename, payload: msg.payload };\n});\nreturn [messages];\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 500,
+        "y": 420,
+        "wires": [
+            [
+                "491140dd0d5a0a7c"
+            ]
+        ]
+    },
+    {
+        "id": "530219d952b81c5c",
+        "type": "function",
+        "z": "f58de2501c119024",
+        "name": "function 2",
+        "func": "const XLSX = global.get('xlsx');\nconst workbook = XLSX.read(msg.payload, { type: 'buffer' });\n\n// List of sheets you want to process\nconst sheetsToProcess = ['IBD #3 Summary ', 'IBD #4 Summary ', 'IBD #5 Summary ', 'IBD #6 Summary ', 'IBD #7 Summary '];\n\nlet results = {};\nsheetsToProcess.forEach(sheetName => {\n    if (workbook.Sheets[sheetName]) {\n        results[sheetName] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);\n    }\n});\n\nmsg.payload = results;\n\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 920,
+        "y": 420,
+        "wires": [
+            [
+                "5e1dbcd97d0bee8a"
+            ]
+        ]
+    },
+    {
+        "id": "40dbda1a0d39fc80",
+        "type": "influxdb out",
+        "z": "f58de2501c119024",
+        "influxdb": "d57c9a1eb1a1dcf2",
+        "name": "IBD rows",
+        "measurement": "rows",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "macrovention",
+        "bucket": "IBD",
+        "x": 1500,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "a53376f8dfc541f1",
+        "type": "influxdb out",
+        "z": "f58de2501c119024",
+        "influxdb": "d57c9a1eb1a1dcf2",
+        "name": "IBD spilt",
+        "measurement": "split",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "macrovention",
+        "bucket": "IBD",
+        "x": 1500,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "915b9b1e4c603c64",
+        "type": "book",
+        "z": "f58de2501c119024",
+        "name": "",
+        "raw": false,
+        "x": 790,
+        "y": 420,
+        "wires": [
+            [
+                "530219d952b81c5c"
+            ]
+        ]
+    },
+    {
+        "id": "88763243dbf825cf",
+        "type": "sheet",
+        "z": "f58de2501c119024",
+        "name": "#3",
+        "sheetName": "IBD #3 Summary ",
+        "x": 530,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f732f46d481e9472",
+        "type": "sheet",
+        "z": "f58de2501c119024",
+        "name": "#6",
+        "sheetName": "IBD #6 Summary ",
+        "x": 530,
+        "y": 220,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "07cd9fa5d8ef1777",
+        "type": "sheet",
+        "z": "f58de2501c119024",
+        "name": "#5",
+        "sheetName": "IBD #5 Summary ",
+        "x": 530,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "453865da2d1afc19",
+        "type": "sheet",
+        "z": "f58de2501c119024",
+        "name": "#7",
+        "sheetName": "IBD #7 Summary ",
+        "x": 530,
+        "y": 260,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f7023e57957d0646",
+        "type": "sheet",
+        "z": "f58de2501c119024",
+        "name": "#4",
+        "sheetName": "IBD #4 Summary ",
+        "x": 530,
+        "y": 140,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "23df62c285a0de5b",
+        "type": "sheet-to-json",
+        "z": "f58de2501c119024",
+        "name": "",
+        "raw": "true",
+        "range": "",
+        "header": "1",
+        "blankrows": false,
+        "x": 810,
+        "y": 180,
+        "wires": [
+            [
+                "439e2d68ef3a28fb"
+            ]
+        ]
+    },
+    {
+        "id": "96337e65a8f28881",
+        "type": "inject",
+        "z": "cb9eaebf8086aa29",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 200,
+        "y": 80,
+        "wires": [
+            [
+                "f462c08095a8f2e0"
+            ]
+        ]
+    },
+    {
+        "id": "f462c08095a8f2e0",
+        "type": "file in",
+        "z": "cb9eaebf8086aa29",
+        "name": "",
+        "filename": "/data/All IBD Machine July.xlsx",
+        "filenameType": "str",
+        "format": "",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 250,
+        "y": 140,
+        "wires": [
+            [
+                "99d1ad95ebdbb8b2"
+            ]
+        ]
+    },
+    {
+        "id": "0272777620ed0200",
+        "type": "split",
+        "z": "cb9eaebf8086aa29",
+        "name": "",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "",
+        "x": 730,
+        "y": 240,
+        "wires": [
+            [
+                "33ed2f41020ec012"
+            ]
+        ]
+    },
+    {
+        "id": "459c2c372c71063e",
+        "type": "comment",
+        "z": "cb9eaebf8086aa29",
+        "name": " -read file node to read the file by absolute path \\n -book node to convert the content to a workbook object \\n -use spreadsheet node to choose specific sheet \\n -convert sheet object to JSON object \\n -split the object in sequence \\n -use switch node to arrange the output \\n -function to restructure the data \\n -influxdb",
+        "info": "",
+        "x": 800,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "8183a7c46644418d",
+        "type": "function",
+        "z": "cb9eaebf8086aa29",
+        "name": "restruc (final)",
+        "func": "var sheetName = msg.selectedSheetName.split(\" \");\nvar machineName = sheetName[0] + \" \" + sheetName[1];\nlet totalRow = 0;\nlet processedData = []; // Create an array to store processed data\n\nmsg.injectionTime = new Date().toISOString();\n\nfor (let i = 2; i < msg.payload.length; i++) { // Start from index 2 (third row)\n    var plateID = msg.payload[i][2]; // extract from msg.payload, these properties contain data\n    var endDate = msg.payload[i][19];\n    var procCD = msg.payload[i][18];\n    var grade = msg.payload[i][25];\n    var cross = msg.payload[i][26];\n    var h = msg.payload[i][27];\n    var v = msg.payload[i][28];\n    var customer = msg.payload[i][29];\n    var reviewDate = msg.payload[i][30];\n\n    // Check if any of the variables have a value\n    if (\n        plateID !== undefined ||\n        endDate !== undefined ||\n        procCD !== undefined ||\n        grade !== undefined ||\n        cross !== undefined ||\n        h !== undefined ||\n        v !== undefined ||\n        customer !== undefined ||\n        reviewDate !== undefined\n    ) {\n        // At least one variable has a value, so add the data to the array\n        var data = {\n            'Plate_ID': plateID,\n            'End_Date': endDate,\n            'Proc_CD': procCD,\n            'Grade': grade,\n            'Cross': cross,\n            'H': h,\n            'V': v,\n            'Customer': customer,\n            'ReviewDate': reviewDate,\n            'Machine_Name': machineName\n        };\n\n        if (data.End_Date !== undefined && typeof data.End_Date == 'number') {\n            var parsedEndDate = new Date(parseExcelDate(data.End_Date)).toISOString(); //convert it to readable format\n            data.End_Date = parsedEndDate.slice(0, 10) + \" \" + parsedEndDate.slice(11, 19);\n        }\n\n        if (data.ReviewDate !== undefined && typeof data.ReviewDate == 'number') {\n            var parsedReviewDate = new Date(parseExcelDate(data.ReviewDate)).toISOString();\n            data.ReviewDate = parsedReviewDate.slice(0, 10);\n        }\n\n        processedData.push(data); // Add the processed data to the array\n        totalRow++; // Increment the total row count by 1 for each row processed\n    }\n}\n\nfunction parseExcelDate(excelSerialNumber) {\n    var excelEpoch = new Date('1899-12-30');\n    var parsed = excelEpoch.getTime() + (excelSerialNumber * 24 * 60 * 60 * 1000);\n    return parsed;\n}\n\nmsg.payload = processedData; // Store the processed data in msg.payload\nmsg.totalRows = totalRow; // Store the total row count in msg.totalRows\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 730,
+        "y": 180,
+        "wires": [
+            [
+                "0272777620ed0200"
+            ]
+        ]
+    },
+    {
+        "id": "33ed2f41020ec012",
+        "type": "debug",
+        "z": "cb9eaebf8086aa29",
+        "name": "debug 9",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 900,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "8d39e4d66f30e767",
+        "type": "influxdb out",
+        "z": "cb9eaebf8086aa29",
+        "influxdb": "d57c9a1eb1a1dcf2",
+        "name": "IBD rows",
+        "measurement": "rows",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "macrovention",
+        "bucket": "IBD",
+        "x": 900,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "99d1ad95ebdbb8b2",
+        "type": "book",
+        "z": "cb9eaebf8086aa29",
+        "name": "",
+        "raw": false,
+        "x": 450,
+        "y": 140,
+        "wires": [
+            [
+                "5e6578df7df198c6"
+            ]
+        ]
+    },
+    {
+        "id": "5e6578df7df198c6",
+        "type": "sheet",
+        "z": "cb9eaebf8086aa29",
+        "name": "#3",
+        "sheetName": "IBD #3 Summary ",
+        "x": 590,
+        "y": 140,
+        "wires": [
+            [
+                "278f513bc1be3b19"
+            ]
+        ]
+    },
+    {
+        "id": "278f513bc1be3b19",
+        "type": "sheet-to-json",
+        "z": "cb9eaebf8086aa29",
+        "name": "",
+        "raw": "true",
+        "range": "",
+        "header": "1",
+        "blankrows": false,
+        "x": 730,
+        "y": 140,
+        "wires": [
+            [
+                "8183a7c46644418d"
+            ]
+        ]
+    },
+    {
+        "id": "8b63b1076a40bf2b",
+        "type": "inject",
+        "z": "82bf2f18d068e76d",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 120,
+        "y": 100,
+        "wires": [
+            [
+                "8b52fa9dee3f1a2f"
+            ]
+        ]
+    },
+    {
+        "id": "8b52fa9dee3f1a2f",
+        "type": "file in",
+        "z": "82bf2f18d068e76d",
+        "name": "",
+        "filename": "/data/All IBD Machine July.xlsx",
+        "filenameType": "str",
+        "format": "",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 330,
+        "y": 100,
+        "wires": [
+            [
+                "c6f8adb87da7039f"
+            ]
+        ]
+    },
+    {
+        "id": "27ec1078288a18b1",
+        "type": "debug",
+        "z": "82bf2f18d068e76d",
+        "name": "debug 10",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1100,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "a22b95691ad7cb19",
+        "type": "file",
+        "z": "82bf2f18d068e76d",
+        "name": "msg.filename",
+        "filename": "filename",
+        "filenameType": "msg",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "false",
+        "encoding": "none",
+        "x": 70,
+        "y": 520,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a29a3850bcad373a",
+        "type": "function",
+        "z": "82bf2f18d068e76d",
+        "name": "function 3",
+        "func": "let filenames = [\"IBD1.xlsx\", \"IBD2.xlsx\", \"IBD3.xlsx\"]; // Your desired file names\nlet messages = filenames.map((filename) => {\n    return { filename: filename, payload: msg.payload };\n});\nreturn [messages];\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 60,
+        "y": 440,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e9b432ac61b32e5a",
+        "type": "function",
+        "z": "82bf2f18d068e76d",
+        "name": "function 4",
+        "func": "const XLSX = global.get('xlsx');\nconst workbook = XLSX.read(msg.payload, { type: 'buffer' });\n\n// List of sheets you want to process\nconst sheetsToProcess = ['IBD #3 Summary ', 'IBD #4 Summary ', 'IBD #5 Summary ', 'IBD #6 Summary ', 'IBD #7 Summary '];\n\nlet results = {};\nsheetsToProcess.forEach(sheetName => {\n    if (workbook.Sheets[sheetName]) {\n        results[sheetName] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);\n    }\n});\n\nmsg.payload = results;\n\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 60,
+        "y": 480,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c6f8adb87da7039f",
+        "type": "function",
+        "z": "82bf2f18d068e76d",
+        "name": "IBD",
+        "func": "let numberOfClones = 3; // Specify the number of clones you want\nlet originalFilename = 'test'; // Base name for the files\nlet fileExtension = '.xlsx'; // File extension\n\nlet messages = [];\n\nfor (let i = 1; i <= numberOfClones; i++) {\n    let filename = originalFilename + i + fileExtension;\n    messages.push({ filename: filename, payload: msg.payload });\n}\n\nreturn [messages];\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 250,
+        "y": 140,
+        "wires": [
+            [
+                "cde066469c0720ea"
+            ]
+        ]
+    },
+    {
+        "id": "0df48929128c57b9",
+        "type": "python-function",
+        "z": "82bf2f18d068e76d",
+        "name": "",
+        "func": "\nreturn msg",
+        "outputs": 1,
+        "x": 80,
+        "y": 560,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "32b0bc59eead2414",
+        "type": "function",
+        "z": "82bf2f18d068e76d",
+        "name": "restruc (final)",
+        "func": "var sheetName = msg.selectedSheetName.split(\" \");\nvar machineName = sheetName[0] + \" \" + sheetName[1];\nlet totalRow = 0;\nlet processedData = []; // Create an array to store processed data\n\nmsg.injectionTime = new Date().toISOString();\n\nfor (let i = 2; i < msg.payload.length; i++) { // Start from index 2 (third row)\n    var plateID = msg.payload[i][2]; // extract from msg.payload, these properties contain data\n    var endDate = msg.payload[i][19];\n    var procCD = msg.payload[i][18];\n    var grade = msg.payload[i][25];\n    var cross = msg.payload[i][26];\n    var h = msg.payload[i][27];\n    var v = msg.payload[i][28];\n    var customer = msg.payload[i][29];\n    var reviewDate = msg.payload[i][30];\n\n    // Check if any of the variables have a value\n    if (\n        plateID !== undefined ||\n        endDate !== undefined ||\n        procCD !== undefined ||\n        grade !== undefined ||\n        cross !== undefined ||\n        h !== undefined ||\n        v !== undefined ||\n        customer !== undefined ||\n        reviewDate !== undefined\n    ) {\n        // At least one variable has a value, so add the data to the array\n        var data = {\n            'Plate_ID': plateID,\n            'End_Date': endDate,\n            'Proc_CD': procCD,\n            'Grade': grade,\n            'Cross': cross,\n            'H': h,\n            'V': v,\n            'Customer': customer,\n            'ReviewDate': reviewDate,\n            'Machine_Name': machineName\n        };\n\n        if (data.End_Date !== undefined && typeof data.End_Date == 'number') {\n            var parsedEndDate = new Date(parseExcelDate(data.End_Date)).toISOString(); //convert it to readable format\n            data.End_Date = parsedEndDate.slice(0, 10) + \" \" + parsedEndDate.slice(11, 19);\n        }\n\n        if (data.ReviewDate !== undefined && typeof data.ReviewDate == 'number') {\n            var parsedReviewDate = new Date(parseExcelDate(data.ReviewDate)).toISOString();\n            data.ReviewDate = parsedReviewDate.slice(0, 10);\n        }\n\n        processedData.push(data); // Add the processed data to the array\n        totalRow++; // Increment the total row count by 1 for each row processed\n    }\n}\n\nfunction parseExcelDate(excelSerialNumber) {\n    var excelEpoch = new Date('1899-12-30');\n    var parsed = excelEpoch.getTime() + (excelSerialNumber * 24 * 60 * 60 * 1000);\n    return parsed;\n}\n\nmsg.payload = processedData; // Store the processed data in msg.payload\nmsg.totalRows = totalRow; // Store the total row count in msg.totalRows\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 770,
+        "y": 180,
+        "wires": [
+            [
+                "25e360debc1ecd5b",
+                "9e0e5a32980c88c6"
+            ]
+        ]
+    },
+    {
+        "id": "9e0e5a32980c88c6",
+        "type": "split",
+        "z": "82bf2f18d068e76d",
+        "name": "",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "",
+        "x": 750,
+        "y": 220,
+        "wires": [
+            [
+                "206a04c7d741391b"
+            ]
+        ]
+    },
+    {
+        "id": "25e360debc1ecd5b",
+        "type": "function",
+        "z": "82bf2f18d068e76d",
+        "name": "count rows",
+        "func": "var totalNumberRows = msg.totalRows; // Access the total row count from msg\nvar selectedSheetName = msg.selectedSheetName;\nvar injectionTime = msg.injectionTime;\nvar data = msg.payload; // Assuming msg.payload contains the filtered data\n\n// Calculate the total rows for the current sheet name\nvar totalRows = data.length;\n\n// Create a label that combines the sheet name and total rows count\nvar label = `${selectedSheetName} = ${totalRows} rows`;\n\n// Create an array of column names to check for \"NG\" values\nvar columnsToCheck = [\"Plate_ID\", \"End_Date\", \"Proc_CD\", \"Grade\", \"Cross\", \"H\", \"V\", \"Customer\", \"ReviewDate\"];\n\n// Initialize a counter for rows with \"NG\" values\nvar ngRowCount = 0;\n\n// Iterate through the data array\nfor (var i = 0; i < data.length; i++) {\n    var row = data[i];\n\n    // Iterate through the columns to check\n    for (var j = 0; j < columnsToCheck.length; j++) {\n        var columnName = columnsToCheck[j];\n\n        // Check if the column contains \"NG\"\n        if (row[columnName] === \"NG\") {\n            ngRowCount++;\n            break; // If \"NG\" is found in one column, no need to check other columns for this row\n        }\n    }\n}\n\n// Create a result object that combines both sets of data\nvar result = {\n    label: label, \n    selectedSheetName: selectedSheetName,\n    injectionTime: injectionTime,\n    totalNumberRows: totalNumberRows,\n    data: data,\n    totalNGRows: ngRowCount,\n};\n\nmsg.payload = result;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 950,
+        "y": 180,
+        "wires": [
+            [
+                "27ec1078288a18b1"
+            ]
+        ]
+    },
+    {
+        "id": "206a04c7d741391b",
+        "type": "debug",
+        "z": "82bf2f18d068e76d",
+        "name": "debug 11",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1100,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "cde066469c0720ea",
+        "type": "book",
+        "z": "82bf2f18d068e76d",
+        "name": "",
+        "raw": false,
+        "x": 250,
+        "y": 180,
+        "wires": [
+            [
+                "7d9460d17c3bfa6e",
+                "10472635836a3fb6",
+                "b8c55568561e2a6f",
+                "9b3eef926333c682",
+                "3577bff540da06ce"
+            ]
+        ]
+    },
+    {
+        "id": "7d9460d17c3bfa6e",
+        "type": "sheet",
+        "z": "82bf2f18d068e76d",
+        "name": "#3",
+        "sheetName": "IBD #3 Summary ",
+        "x": 430,
+        "y": 140,
+        "wires": [
+            [
+                "bad6dac5827046a7"
+            ]
+        ]
+    },
+    {
+        "id": "9b3eef926333c682",
+        "type": "sheet",
+        "z": "82bf2f18d068e76d",
+        "name": "#6",
+        "sheetName": "IBD #6 Summary ",
+        "x": 430,
+        "y": 260,
+        "wires": [
+            [
+                "bad6dac5827046a7"
+            ]
+        ]
+    },
+    {
+        "id": "b8c55568561e2a6f",
+        "type": "sheet",
+        "z": "82bf2f18d068e76d",
+        "name": "#5",
+        "sheetName": "IBD #5 Summary ",
+        "x": 430,
+        "y": 220,
+        "wires": [
+            [
+                "bad6dac5827046a7"
+            ]
+        ]
+    },
+    {
+        "id": "3577bff540da06ce",
+        "type": "sheet",
+        "z": "82bf2f18d068e76d",
+        "name": "#7",
+        "sheetName": "IBD #7 Summary ",
+        "x": 430,
+        "y": 300,
+        "wires": [
+            [
+                "bad6dac5827046a7"
+            ]
+        ]
+    },
+    {
+        "id": "10472635836a3fb6",
+        "type": "sheet",
+        "z": "82bf2f18d068e76d",
+        "name": "#4",
+        "sheetName": "IBD #4 Summary ",
+        "x": 430,
+        "y": 180,
+        "wires": [
+            [
+                "bad6dac5827046a7"
+            ]
+        ]
+    },
+    {
+        "id": "bad6dac5827046a7",
+        "type": "sheet-to-json",
+        "z": "82bf2f18d068e76d",
+        "name": "",
+        "raw": "true",
+        "range": "",
+        "header": "1",
+        "blankrows": false,
+        "x": 610,
+        "y": 180,
+        "wires": [
+            [
+                "32b0bc59eead2414"
+            ]
+        ]
     }
 ]
