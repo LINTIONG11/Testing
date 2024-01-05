@@ -16,5 +16,50 @@
         "x": 410,
         "y": 180,
         "wires": []
+    },
+    {
+        "id": "36c5adb5d395393d",
+        "type": "debug",
+        "z": "d7be62fcd159c5b4",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 620,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "f5b9fd1f0ae170e9",
+        "type": "inject",
+        "z": "d7be62fcd159c5b4",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 380,
+        "y": 100,
+        "wires": [
+            [
+                "36c5adb5d395393d"
+            ]
+        ]
     }
 ]
