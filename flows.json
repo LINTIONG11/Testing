@@ -48,6 +48,14 @@
         "env": []
     },
     {
+        "id": "2267367b15858218",
+        "type": "tab",
+        "label": "Flow 6",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "da84dd9e0c2d4c8a",
         "type": "influxdb",
         "hostname": "127.0.0.1",
@@ -1736,6 +1744,51 @@
         "statusType": "auto",
         "x": 500,
         "y": 180,
+        "wires": []
+    },
+    {
+        "id": "13088056a5870a98",
+        "type": "inject",
+        "z": "2267367b15858218",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 160,
+        "y": 160,
+        "wires": [
+            [
+                "6f40726bd156c7f2"
+            ]
+        ]
+    },
+    {
+        "id": "6f40726bd156c7f2",
+        "type": "debug",
+        "z": "2267367b15858218",
+        "name": "debug 13",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 320,
+        "y": 160,
         "wires": []
     }
 ]
