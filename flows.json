@@ -8,34 +8,6 @@
         "env": []
     },
     {
-        "id": "da84dd9e0c2d4c8a",
-        "type": "influxdb",
-        "hostname": "127.0.0.1",
-        "port": "8086",
-        "protocol": "http",
-        "database": "database",
-        "name": "",
-        "usetls": false,
-        "tls": "",
-        "influxdbVersion": "2.0",
-        "url": "http://127.0.0.1:8086",
-        "rejectUnauthorized": true
-    },
-    {
-        "id": "d57c9a1eb1a1dcf2",
-        "type": "influxdb",
-        "hostname": "127.0.0.1",
-        "port": "8086",
-        "protocol": "http",
-        "database": "database",
-        "name": "influxdb_data",
-        "usetls": false,
-        "tls": "",
-        "influxdbVersion": "2.0",
-        "url": "http://172.17.0.1:8086",
-        "rejectUnauthorized": true
-    },
-    {
         "id": "13088056a5870a98",
         "type": "inject",
         "z": "2267367b15858218",
